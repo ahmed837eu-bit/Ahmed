@@ -1,11 +1,11 @@
 const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, PermissionsBitField } = require('discord.js');
-const colorManager = require('../colorManager');
-const { EVENT_TYPES, logEvent } = require('../logs_system');
+const colorManager = require('../utils/colorManager.js');
+const { EVENT_TYPES, logEvent } = require('../utils/logs_system.js');
 // استخدام النظام المباشر لحفظ البيانات
 
 const name = 'log';
 
-async function execute(message, args, { client, saveData, BOT_OWNERS }) {
+async function execute(message, args, { client, scheduleSave, BOT_OWNERS }) {
     const isOwner = BOT_OWNERS.includes(message.author.id) || message.guild.ownerId === message.author.id;
     if (!isOwner) {
         await message.react('❌');
@@ -97,7 +97,7 @@ function getArabicDescription(type) {
     return descriptions[type] || 'وصف غير متوفر';
 }
 
-async function handleInteraction(interaction, client, saveData) {
+async function handleInteraction(interaction, client, scheduleSave) {
     try {
         // Validate interaction first
         if (!interaction || !interaction.isRepliable()) {
@@ -243,7 +243,7 @@ async function handleInteraction(interaction, client, saveData) {
                     }
                 }
 
-                saveData();
+                scheduleSave();
 
                 // Update the same message instead of creating new one
                 const embed = colorManager.createEmbed()
@@ -359,7 +359,7 @@ async function handleInteraction(interaction, client, saveData) {
                     client.logConfig.settings[type] = { enabled: false, channelId: null };
                 }
 
-                saveData();
+                scheduleSave();
 
                 const arabicEventTypes = {
                     'RESPONSIBILITY_MANAGEMENT': 'إدارة المسؤوليات',
@@ -479,7 +479,7 @@ async function handleInteraction(interaction, client, saveData) {
                     }
 
                     client.logConfig.settings[type] = { enabled: false, channelId: null };
-                    saveData();
+                    scheduleSave();
 
                     // تحديث فوري للرسالة الأساسية
                     await updateLogMessage(interaction, client);
@@ -541,7 +541,7 @@ async function handleInteraction(interaction, client, saveData) {
                     client.logConfig.settings[type].enabled = true;
                     client.logConfig.settings[type].channelId = channelId;
 
-                    saveData();
+                    scheduleSave();
 
                     // تطبيق الصلاحيات على القناة المختارة
                     const logRoles = client.logConfig.logRoles || [];
@@ -665,7 +665,7 @@ async function handleInteraction(interaction, client, saveData) {
 
                     if (addedRoles.length > 0) {
                         client.logConfig.logRoles = [...currentLogRoles, ...addedRoles];
-                        saveData();
+                        scheduleSave();
                         await updateLogPermissions(interaction.guild, client.logConfig.logRoles);
                     }
 
@@ -859,7 +859,7 @@ async function handleInteraction(interaction, client, saveData) {
                     client.logConfig.logRoles = currentLogRoles.filter(role => !rolesToRemove.includes(role));
 
                     // حفظ التحديثات
-                    saveData();
+                    scheduleSave();
 
                     // إزالة الصلاحيات من القنوات
                     await removeLogPermissions(interaction.guild, rolesToRemove);
@@ -921,7 +921,7 @@ async function handleInteraction(interaction, client, saveData) {
             const newLogRoles = [...new Set([...currentLogRoles, ...selectedRoles])];
             client.logConfig.logRoles = newLogRoles;
 
-            saveData();
+            scheduleSave();
 
             // تحديث صلاحيات اللوق
             await updateLogPermissions(interaction.guild, newLogRoles);
@@ -976,7 +976,7 @@ async function handleInteraction(interaction, client, saveData) {
                 const newLogRoles = currentLogRoles.filter(roleId => !validRoles.includes(roleId));
                 client.logConfig.logRoles = newLogRoles;
 
-                saveData();
+                scheduleSave();
 
                 // تحديث صلاحيات اللوق مع إزالة فعلية للصلاحيات
                 await removeLogPermissions(interaction.guild, validRoles);
@@ -1081,7 +1081,7 @@ async function handleInteraction(interaction, client, saveData) {
                 }
 
                 client.logConfig.logRoles = [...currentLogRoles, ...newRoles];
-                saveData();
+                scheduleSave();
 
                 await updateLogPermissions(interaction.guild, client.logConfig.logRoles);
 
@@ -1141,7 +1141,7 @@ async function handleInteraction(interaction, client, saveData) {
                 const removedRoles = [...currentLogRoles];
 
                 client.logConfig.logRoles = [];
-                saveData();
+                scheduleSave();
 
                 // إزالة صلاحيات جميع الرولات
                 await removeLogPermissions(interaction.guild, removedRoles);

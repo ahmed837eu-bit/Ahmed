@@ -1,7 +1,7 @@
 const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, AttachmentBuilder } = require('discord.js');
-const { logEvent } = require('../logs_system');
-const { checkCooldown, startCooldown } = require('./cooldown');
-const colorManager = require('../colorManager');
+const { logEvent } = require('../utils/logs_system.js');
+const { checkCooldown, startCooldown } = require('./cooldown.js');
+const colorManager = require('../utils/colorManager.js');
 
 const name = 'setup';
 

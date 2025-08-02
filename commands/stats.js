@@ -1,7 +1,7 @@
 const { EmbedBuilder, StringSelectMenuBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
-const colorManager = require('../colorManager');
+const colorManager = require('../utils/colorManager.js');
 
 const name = 'stats';
 

@@ -2,10 +2,10 @@ const { Client, GatewayIntentBits, Partials, Collection, ModalBuilder, TextInput
 const dotenv = require('dotenv');
 const fs = require('fs');
 const path = require('path');
-const { logEvent } = require('./logs_system');
-const { startReminderSystem } = require('./notifications');
-const { checkCooldown, startCooldown } = require('./commands/cooldown');
-const colorManager = require('./colorManager');
+const { logEvent } = require('./utils/logs_system.js');
+const { startReminderSystem } = require('./commands/notifications.js');
+const { checkCooldown, startCooldown } = require('./commands/cooldown.js');
+const colorManager = require('./utils/colorManager.js');
 
 dotenv.config();
 
@@ -129,8 +129,24 @@ for (const file of commandFiles) {
   }
 }
 
-// دالة حفظ محدثة - تقرأ أحدث البيانات من الملفات قبل الحفظ
-function saveData() {
+let isDataDirty = false;
+
+const topCommand = require('./commands/top_leaderboard.js');
+
+// دالة لوضع علامة للحفظ
+function scheduleSave() {
+    isDataDirty = true;
+    if (topCommand.invalidateTopCache) {
+        topCommand.invalidateTopCache();
+    }
+}
+
+// دالة حفظ محدثة - تحفظ فقط عند وجود تغييرات
+function saveData(force = false) {
+    if (!isDataDirty && !force) {
+        return false;
+    }
+
     try {
         // قراءة أحدث البيانات من الملفات أولاً
         const currentPoints = readJSONFile(DATA_FILES.points, {});
@@ -162,6 +178,7 @@ function saveData() {
         botConfig = mergedBotConfig;
 
         console.log('💾 تم حفظ جميع التغييرات في ملفات JSON');
+        isDataDirty = false; // إعادة تعيين العلامة بعد الحفظ
         return true;
     } catch (error) {
         console.error('❌ خطأ في حفظ البيانات:', error);
@@ -265,7 +282,7 @@ function cleanInvalidUserIds() {
 
 // Make functions available globally
 global.updatePrefix = updatePrefix;
-global.saveData = saveData;
+global.scheduleSave = scheduleSave; // <-- Changed this
 global.reloadData = reloadData;
 global.cleanInvalidUserIds = cleanInvalidUserIds;
 
@@ -286,7 +303,13 @@ client.once('ready', async () => {
     }
   }, 30000);
 
-  // إنشاء backup تلقائي كل ساعة
+  // حفظ البيانات بشكل دوري كل 60 ثانية
+  setInterval(() => {
+    saveData();
+  }, 60 * 1000);
+
+  // إنشاء backup تلقائي كل ساعة (معطل حالياً لعدم وجود ملف security.js)
+  /*
   setInterval(() => {
     try {
       const securityManager = require('./security');
@@ -295,6 +318,7 @@ client.once('ready', async () => {
       console.error('فشل في إنشاء backup:', error);
     }
   }, 60 * 60 * 1000); // كل ساعة
+  */
 
   // قراءة البريفكس من الملف مباشرة
   const currentBotConfig = readJSONFile(DATA_FILES.botConfig, {});
@@ -408,12 +432,12 @@ client.on('messageCreate', async message => {
 
     // Commands for everyone (help, top)
     if (commandName === 'help' || commandName === 'top') {
-      await command.execute(message, args, { responsibilities, points, saveData, BOT_OWNERS, ADMIN_ROLES, client });
+      await command.execute(message, args, { responsibilities, points, scheduleSave, BOT_OWNERS, ADMIN_ROLES, client });
     }
     // Commands for admins and owners (مسؤول)
     else if (commandName === 'مسؤول') {
       if (hasAdminRole || isOwner || hasAdministrator) {
-        await command.execute(message, args, { responsibilities, points, saveData, BOT_OWNERS, ADMIN_ROLES, client });
+        await command.execute(message, args, { responsibilities, points, scheduleSave, BOT_OWNERS, ADMIN_ROLES, client });
       } else {
         await message.react('❌');
         return;
@@ -422,7 +446,7 @@ client.on('messageCreate', async message => {
     // Commands for owners only (call, stats, setup)
     else if (commandName === 'call' || commandName === 'stats' || commandName === 'setup') {
       if (isOwner) {
-        await command.execute(message, args, { responsibilities, points, saveData, BOT_OWNERS, ADMIN_ROLES, client });
+        await command.execute(message, args, { responsibilities, points, scheduleSave, BOT_OWNERS, ADMIN_ROLES, client });
       } else {
         await message.react('❌');
         return;
@@ -431,7 +455,7 @@ client.on('messageCreate', async message => {
     // Commands for owners only (all other commands)
     else {
       if (isOwner) {
-        await command.execute(message, args, { responsibilities, points, saveData, BOT_OWNERS, ADMIN_ROLES, client });
+        await command.execute(message, args, { responsibilities, points, scheduleSave, BOT_OWNERS, ADMIN_ROLES, client });
       } else {
         await message.react('❌');
         return;
@@ -673,7 +697,7 @@ client.on('interactionCreate', async interaction => {
         points[responsibilityName][interaction.user.id][timestamp] = 0;
       }
       points[responsibilityName][interaction.user.id][timestamp] += 1;
-      saveData();
+      scheduleSave();
 
       // Update message to remove button completely
       const successEmbed = colorManager.createEmbed()
@@ -1216,8 +1240,8 @@ async function gracefulShutdown(signal) {
 console.log(`\n🔄 جاري إيقاف البوت بأمان... (${signal})`);
 
   try {
-    // حفظ جميع البيانات
-    saveData();
+    // حفظ جميع البيانات بشكل إجباري
+    saveData(true);
     console.log('💾 تم حفظ جميع البيانات');
 
     // إغلاق البوت

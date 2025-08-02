@@ -1,7 +1,7 @@
 const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
 const colorManager = require('../colorManager');
-const { checkCooldown, startCooldown } = require('./cooldown');
-const { logEvent } = require('../logs_system');
+const colorManager = require('../utils/colorManager.js');
+const { logEvent } = require('../utils/logs_system.js');
 
 module.exports = {
   name: 'call',
@@ -147,7 +147,7 @@ module.exports = {
         if (!interaction.replied && !interaction.deferred) {
           await interaction.showModal(modal);
         }
-        const { quickLog } = require('../logs_system');
+        const { quickLog } = require('../utils/logs_system.js');
               quickLog.adminCallRequested(client, interaction.guild, responsibilityName, reasonInput.value, target, interaction.user);
         // Log the event
         //logEvent(client, interaction.guild, {

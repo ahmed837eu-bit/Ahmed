@@ -1,6 +1,6 @@
 const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, PermissionsBitField } = require('discord.js');
-const colorManager = require('../colorManager');
-const { logEvent } = require('../logs_system');
+const colorManager = require('../utils/colorManager.js');
+const { logEvent } = require('../utils/logs_system.js');
 const fs = require('fs');
 const path = require('path');
 
@@ -143,7 +143,7 @@ async function execute(message, args, { saveData, BOT_OWNERS, client }) {
 
               // تحديث صلاحيات اللوق
               if (client.logConfig && client.logConfig.logRoles) {
-                const { updateLogPermissions } = require('./logs');
+                const { updateLogPermissions } = require('./logs.js');
                 await updateLogPermissions(message.guild, client.logConfig.logRoles);
               }
             }
@@ -250,7 +250,7 @@ async function execute(message, args, { saveData, BOT_OWNERS, client }) {
 
               // تحديث صلاحيات اللوق
               if (client.logConfig && client.logConfig.logRoles) {
-                const { updateLogPermissions } = require('./logs');
+                const { updateLogPermissions } = require('./logs.js');
                 await updateLogPermissions(message.guild, client.logConfig.logRoles);
               }
             }

@@ -1,6 +1,6 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const colorManager = require('../colorManager');
-const { logEvent } = require('../logs_system');
+const colorManager = require('../utils/colorManager.js');
+const { logEvent } = require('../utils/logs_system.js');
 const fs = require('fs');
 const path = require('path');
 
@@ -44,7 +44,7 @@ function saveBotConfig(config) {
     }
 }
 
-async function execute(message, args, { client, saveData, BOT_OWNERS }) {
+async function execute(message, args, { client, scheduleSave, BOT_OWNERS }) {
     // Only current bot owners can manage other owners
     if (!BOT_OWNERS.includes(message.author.id)) {
         await message.react('❌');
@@ -148,7 +148,7 @@ async function execute(message, args, { client, saveData, BOT_OWNERS }) {
                             botConfig.owners = BOT_OWNERS;
                             saveBotConfig(botConfig);
 
-                            saveData();
+                            scheduleSave();
 
                             // Log the event
                             logEvent(client, message.guild, {
@@ -272,7 +272,7 @@ async function execute(message, args, { client, saveData, BOT_OWNERS }) {
                             botConfig.owners = BOT_OWNERS;
                             saveBotConfig(botConfig);
 
-                            saveData();
+                            scheduleSave();
 
                             // Log the event
                             logEvent(client, message.guild, {

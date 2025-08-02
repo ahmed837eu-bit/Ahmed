@@ -1,5 +1,5 @@
 const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const colorManager = require('../colorManager');
+const colorManager = require('../utils/colorManager.js');
 const fs = require('fs');
 const path = require('path');
 
@@ -8,6 +8,16 @@ const name = 'top';
 // مسارات الملفات
 const pointsPath = path.join(__dirname, '..', 'data', 'points.json');
 const responsibilitiesPath = path.join(__dirname, '..', 'data', 'responsibilities.json');
+
+// --- Caching Mechanism ---
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+let leaderboardCache = {};
+
+function invalidateTopCache() {
+    console.log('Leaderboard cache invalidated.');
+    leaderboardCache = {};
+}
+// -------------------------
 
 // دالة قراءة البيانات المحدثة
 function readJSONFile(filePath, defaultValue = {}) {
@@ -40,24 +50,29 @@ async function execute(message, args, { points, responsibilities }) {
         }
     }
 
-    function getUserPoints(type = 'all', responsibilityName = null) {
-        // قراءة البيانات المحدثة في كل مرة
-        const freshPoints = readJSONFile(pointsPath, {});
-
-        const userPoints = {};
+    function getOrCalculateUserPoints(type = 'all', responsibilityName = null) {
+        const cacheKey = `${type}_${responsibilityName || 'all'}`;
         const now = Date.now();
+
+        // Check cache first
+        if (leaderboardCache[cacheKey] && (now - leaderboardCache[cacheKey].timestamp < CACHE_DURATION)) {
+            return leaderboardCache[cacheKey].data;
+        }
+
+        // If not in cache or expired, calculate
+        const freshPoints = readJSONFile(pointsPath, {});
+        const userPoints = {};
         const oneDayAgo = now - (24 * 60 * 60 * 1000);
         const oneWeekAgo = now - (7 * 24 * 60 * 60 * 1000);
         const oneMonthAgo = now - (30 * 24 * 60 * 60 * 1000);
 
-        const pointsToCheck = responsibilityName ? 
-            { [responsibilityName]: freshPoints[responsibilityName] || {} } : 
+        const pointsToCheck = responsibilityName ?
+            { [responsibilityName]: freshPoints[responsibilityName] || {} } :
             freshPoints;
 
         for (const responsibility in pointsToCheck) {
             for (const userId in pointsToCheck[responsibility]) {
                 if (typeof pointsToCheck[responsibility][userId] === 'object') {
-                    // New format with timestamps
                     const userHistory = pointsToCheck[responsibility][userId];
                     let userTotal = 0;
 
@@ -78,7 +93,6 @@ async function execute(message, args, { points, responsibilities }) {
                         userPoints[userId] = (userPoints[userId] || 0) + userTotal;
                     }
                 } else {
-                    // Old format - treat as all-time points
                     if (type === 'all') {
                         userPoints[userId] = (userPoints[userId] || 0) + pointsToCheck[responsibility][userId];
                     }
@@ -86,14 +100,22 @@ async function execute(message, args, { points, responsibilities }) {
             }
         }
 
-        return Object.entries(userPoints).sort((a, b) => b[1] - a[1]);
+        const sortedData = Object.entries(userPoints).sort((a, b) => b[1] - a[1]);
+
+        // Store in cache
+        leaderboardCache[cacheKey] = {
+            data: sortedData,
+            timestamp: now
+        };
+
+        return sortedData;
     }
 
     const medals = ['🥇', '🥈', '🥉'];
     const badge = (points) => points >= 50 ? '🏆' : points >= 25 ? '⭐' : points >= 10 ? '🎖️' : '';
 
     function buildEmbed() {
-        const sorted = getUserPoints(currentType, currentResponsibility);
+        const sorted = getOrCalculateUserPoints(currentType, currentResponsibility);
         const current = sorted.slice(page * pageSize, (page + 1) * pageSize);
 
         if (sorted.length === 0) {
@@ -153,7 +175,7 @@ async function execute(message, args, { points, responsibilities }) {
     const selectRow1 = new ActionRowBuilder().addComponents(typeSelect);
     const selectRow2 = new ActionRowBuilder().addComponents(respSelect);
 
-    const sorted = getUserPoints(currentType, currentResponsibility);
+    const sorted = getOrCalculateUserPoints(currentType, currentResponsibility);
     const maxPages = Math.ceil(sorted.length / pageSize);
 
     const buttonRow = new ActionRowBuilder().addComponents(
@@ -193,14 +215,14 @@ async function execute(message, args, { points, responsibilities }) {
             } else if (interaction.customId === 'top_prev' && page > 0) {
                 page--;
             } else if (interaction.customId === 'top_next') {
-                const sorted = getUserPoints(currentType, currentResponsibility);
+                const sorted = getOrCalculateUserPoints(currentType, currentResponsibility);
                 const maxPages = Math.ceil(sorted.length / pageSize);
                 if (page < maxPages - 1) {
                     page++;
                 }
             }
 
-            const sorted = getUserPoints(currentType, currentResponsibility);
+            const sorted = getOrCalculateUserPoints(currentType, currentResponsibility);
             const maxPages = Math.ceil(sorted.length / pageSize);
 
             const newButtonRow = new ActionRowBuilder().addComponents(
@@ -230,4 +252,4 @@ async function execute(message, args, { points, responsibilities }) {
     });
 }
 
-module.exports = { name, execute };
+module.exports = { name, execute, invalidateTopCache };

@@ -1,10 +1,10 @@
 const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
-const { logEvent } = require('../logs_system');
-const colorManager = require('../colorManager');
+const { logEvent } = require('../utils/logs_system.js');
+const colorManager = require('../utils/colorManager.js');
 
 const name = 'settings';
 
-async function execute(message, args, { responsibilities, client, saveData, BOT_OWNERS }) {
+async function execute(message, args, { responsibilities, client, scheduleSave, BOT_OWNERS }) {
   const isOwner = BOT_OWNERS.includes(message.author.id) || message.guild.ownerId === message.author.id;
   if (!isOwner) {
     await message.react('❌');
@@ -177,8 +177,8 @@ async function execute(message, args, { responsibilities, client, saveData, BOT_
             console.error('خطأ في حفظ المسؤوليات:', error);
           }
 
-          // حفظ البيانات باستخدام دالة saveData أيضاً
-          saveData();
+          // حفظ البيانات باستخدام دالة scheduleSave أيضاً
+          scheduleSave();
 
           // Update all setup menus when responsibilities change
           try {
@@ -307,7 +307,7 @@ async function execute(message, args, { responsibilities, client, saveData, BOT_
           responsibles: []
         };
         // حفظ البيانات
-          saveData();
+          scheduleSave();
 
           // Update all setup menus when responsibilities change
           try {
@@ -364,7 +364,7 @@ async function execute(message, args, { responsibilities, client, saveData, BOT_
             if (responsibleIds.length > 0) {
               // تحديث المسؤولية بالمسؤولين
               responsibilities[name].responsibles = responsibleIds;
-              saveData();
+              scheduleSave();
 
               // Update all setup menus when responsibilities change
               try {
@@ -473,7 +473,7 @@ async function execute(message, args, { responsibilities, client, saveData, BOT_
           if (allIds.length > 0) {
             responsibilities[name].responsibles = allIds;
             // حفظ البيانات
-          saveData();
+          scheduleSave();
 
           // Update all setup menus when responsibilities change
           try {
@@ -543,7 +543,7 @@ async function execute(message, args, { responsibilities, client, saveData, BOT_
         const oldDesc = responsibilities[responsibilityName].description;
         responsibilities[responsibilityName].description = (!desc || desc.toLowerCase() === 'لا') ? '' : desc;
         // حفظ البيانات
-          saveData();
+          scheduleSave();
 
           // Update all setup menus when responsibilities change
           try {
@@ -581,7 +581,7 @@ async function execute(message, args, { responsibilities, client, saveData, BOT_
 
         responsibilities[responsibilityName].responsibles = respIds;
         // حفظ البيانات
-          saveData();
+          scheduleSave();
 
           // Update all setup menus when responsibilities change
           try {

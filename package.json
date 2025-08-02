@@ -1,0 +1,15 @@
+{
+  "name": "discord-responsibilities-bot",
+  "version": "1.0.0",
+  "description": "A Discord bot for managing responsibilities and tasks.",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.15.3",
+    "dotenv": "^16.4.5"
+  },
+  "author": "",
+  "license": "ISC"
+}

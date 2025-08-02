@@ -1,10 +1,10 @@
 const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, ActivityType } = require('discord.js');
-const colorManager = require('../colorManager');
-const { logEvent } = require('../logs_system');
+const colorManager = require('../utils/colorManager.js');
+const { logEvent } = require('../utils/logs_system.js');
 
 const name = 'vip';
 
-async function execute(message, args, { responsibilities, BOT_OWNERS, client, saveData }) {
+async function execute(message, args, { responsibilities, BOT_OWNERS, client, scheduleSave }) {
     if (!BOT_OWNERS.includes(message.author.id) && message.guild.ownerId !== message.author.id) {
 
         await message.react('❌');
@@ -409,8 +409,8 @@ async function execute(message, args, { responsibilities, BOT_OWNERS, client, sa
                             });
 
                             // حفظ البيانات قبل إعادة التشغيل
-                            if (global.saveData) {
-                                global.saveData();
+                            if (global.scheduleSave) {
+                                global.scheduleSave();
                             }
 
                             // تسجيل الحدث

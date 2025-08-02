@@ -1,5 +1,5 @@
 const { ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
-const colorManager = require('../colorManager');
+const colorManager = require('../utils/colorManager.js');
 
 module.exports = {
   name: 'help',

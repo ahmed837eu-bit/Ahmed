@@ -1,5 +1,5 @@
 
-const colorManager = require('../colorManager');
+const colorManager = require('./colorManager.js');
 const { EmbedBuilder } = require('discord.js');
 
 // دالة لإنشاء embed بلون تلقائي مع إعدادات افتراضية

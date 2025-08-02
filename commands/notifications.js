@@ -1,6 +1,6 @@
 const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
-const colorManager = require('../colorManager');
-const { logEvent } = require('../logs_system');
+const colorManager = require('../utils/colorManager.js');
+const { logEvent } = require('../utils/logs_system.js');
 const fs = require('fs');
 const path = require('path');
 
